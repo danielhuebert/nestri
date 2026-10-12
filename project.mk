@@ -2,11 +2,11 @@
 # Project Customization
 # #############################################################################
 
-PROJECT = triangle
+PROJECT = nestri
 
 UCSRC =
 
-UCXXSRC = triangle.cpp
+UCXXSRC = nestri.cpp
 
 UINCDIR =
 

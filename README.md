@@ -5,7 +5,7 @@ A custom oscillator for the **Korg minilogue xd**, built with Korg's
 analog triangle and the **stepped, bit-crushed triangle of the NES / Famicom**
 sound chip (2A03), with the step resolution under your fingers.
 
-- **File:** `triangle.mnlgxdunit`
+- **File:** `nestri.mnlgxdunit`
 - **Display name on the device:** `nestri`
 - **Type:** `osc` (user oscillator)
 
@@ -25,25 +25,37 @@ rhythmically.
 
 ## Controls
 
-| Knob              | Function                                                    |
-|-------------------|-------------------------------------------------------------|
-| **SHAPE**         | Morph smooth triangle (0) → stepped NES triangle (max); LFO-modulatable |
-| **SHIFT+SHAPE**   | Step resolution: left = coarse (2 steps), center = NES (16), right = fine (128) |
+`nestri` has two sound controls — **Morph** (smooth → stepped amount) and **Step**
+(step resolution) — plus one edit-menu parameter that decides which of them sits
+on the LFO-modulatable SHAPE knob.
 
-There are no edit-menu parameters — everything lives on SHAPE and SHIFT+SHAPE.
+| Knob / Param      | Function                                                    |
+|-------------------|-------------------------------------------------------------|
+| **SHAPE**         | The control selected by *LFO Mod*; always LFO-modulatable   |
+| **SHIFT+SHAPE**   | The other control                                           |
+| **LFO Mod** (edit)| `1` = SHAPE drives Morph, SHIFT+SHAPE drives Step (default) · `2` = swapped |
+
+- **Morph:** smooth triangle (0) → stepped NES triangle (max) — the "chiptune amount".
+- **Step:** step resolution — low = coarse (2 steps), center = NES (16), high = fine (128).
+
+The minilogue xd can only route the SHAPE LFO to the SHAPE knob, so **LFO Mod**
+exists to pick *which* control the LFO sweeps: the morph (default) or the step
+resolution. Set it in the edit menu under MULTI ENGINE (shown as `1` / `2`).
 
 ## How it works
 
 - The triangle is generated directly from the phase and quantized onto a grid of
   `levels = 2^(1 + shift·6)` steps, so SHIFT+SHAPE spans 2 … 128 levels (16 at
   center = the real NES 4-bit triangle).
-- SHAPE crossfades between the raw triangle and its quantized version.
+- Morph crossfades between the raw triangle and its quantized version.
+- The LFO is always added to the SHAPE knob; *LFO Mod* only decides whether that
+  knob feeds Morph or Step, so either control becomes LFO-modulatable.
 - **Sample rate:** 48 kHz, mono oscillator, q31 output with headroom.
 - Core per sample:
   ```cpp
   const float smooth    = (phase < 0.5f) ? (4.f * phase - 1.f) : (3.f - 4.f * phase);
   const float quantized = clip1f(roundf(smooth / step) * step);
-  const float sig       = smooth + shape * (quantized - smooth);
+  const float sig       = smooth + morph * (quantized - smooth);
   ```
 
 > Note: the stepped waveform is naive (not band-limited), so it aliases in high
@@ -61,15 +73,16 @@ From the `logue-sdk` directory:
 docker/run_cmd.sh build minilogue-xd/nestri
 ```
 
-The resulting `triangle.mnlgxdunit` ends up in the project folder.
+The resulting `nestri.mnlgxdunit` ends up in the project folder.
 
 ## Loading onto the device
 
-1. Open the **minilogue xd Sound Librarian**, drag `triangle.mnlgxdunit` onto a
+1. Open the **minilogue xd Sound Librarian**, drag `nestri.mnlgxdunit` onto a
    free slot under *User Oscillators* and transfer it.
 2. On the device, set MULTI ENGINE to **USR** and pick `nestri` with TYPE.
 3. Turn VCO1/VCO2 down and MULTI up to hear the oscillator on its own.
-4. Turn SHAPE for the chiptune amount, SHIFT+SHAPE for the step resolution.
+4. Turn SHAPE and SHIFT+SHAPE for the Morph / Step controls; set **LFO Mod** in
+   the edit menu to choose which one the SHAPE LFO sweeps.
 
 minilogue xd firmware ≥ 2.00 is required for API 1.1-0.
 
